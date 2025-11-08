@@ -24,7 +24,7 @@ export default async function Home() {
   return (
     <div className="app-container">
       <div className="main-card-wrapper">
-        <h1 className="main-title">GUTHUB</h1>
+        <h1 className="main-title">GutHib</h1>
         
         <div className="action-card">
           {user ? (
@@ -40,16 +40,78 @@ export default async function Home() {
             </div>
           ) : (
             <>
-              <p className="action-text">
+              <p className="action-text" style={{ marginBottom: '2.5rem' }}>
                 FIND GITHUB ISSUES THAT MATCH YOUR SKILLS
               </p>
-              <div style={{ display: 'flex', gap: '1rem', marginTop: '2rem' }}>
-                <Link href="/auth/signin" className="nav-button" style={{ flex: 1, textAlign: 'center' }}>
-                  SIGN IN
-                </Link>
-                <Link href="/auth/register" className="nav-button" style={{ flex: 1, textAlign: 'center', background: '#000', color: '#fff', border: '2px solid #fff', borderLeft: '4px solid #fff', borderBottom: '4px solid #fff' }}>
-                  REGISTER
-                </Link>
+              
+              {/* Developer Section */}
+              <div style={{ marginBottom: '2.5rem' }}>
+                <h3 style={{ 
+                  color: '#fff', 
+                  fontSize: '0.875rem', 
+                  fontWeight: 'bold', 
+                  letterSpacing: '2px', 
+                  marginBottom: '1rem',
+                  textAlign: 'center',
+                  fontFamily: "'Courier New', monospace"
+                }}>
+                  FOR DEVELOPERS
+                </h3>
+                <div style={{ display: 'flex', gap: '1rem' }}>
+                  <Link href="/auth/signin" className="nav-button" style={{ flex: 1, textAlign: 'center' }}>
+                    SIGN IN
+                  </Link>
+                  <Link href="/auth/register" className="nav-button" style={{ flex: 1, textAlign: 'center', background: '#000', color: '#fff', border: '2px solid #fff', borderLeft: '4px solid #fff', borderBottom: '4px solid #fff' }}>
+                    REGISTER
+                  </Link>
+                </div>
+              </div>
+
+              {/* Divider */}
+              <div style={{ 
+                height: '2px', 
+                background: '#fff', 
+                margin: '2rem 0',
+                opacity: 0.3
+              }} />
+
+              {/* Organization Section */}
+              <div>
+                <h3 style={{ 
+                  color: '#fff', 
+                  fontSize: '0.875rem', 
+                  fontWeight: 'bold', 
+                  letterSpacing: '2px', 
+                  marginBottom: '1rem',
+                  textAlign: 'center',
+                  fontFamily: "'Courier New', monospace"
+                }}>
+                  FOR ORGANIZATIONS
+                </h3>
+                <div style={{ display: 'flex', gap: '1rem' }}>
+                  <Link href="/org/auth/signin" className="nav-button" style={{ 
+                    flex: 1, 
+                    textAlign: 'center',
+                    background: '#fff',
+                    color: '#000',
+                    border: '2px solid #000',
+                    borderLeft: '4px solid #000',
+                    borderBottom: '4px solid #000'
+                  }}>
+                    ORG <br/> SIGN IN
+                  </Link>
+                  <Link href="/org/auth/register" className="nav-button" style={{ 
+                    flex: 1, 
+                    textAlign: 'center',
+                    background: '#fff',
+                    color: '#000',
+                    border: '2px solid #000',
+                    borderLeft: '4px solid #000',
+                    borderBottom: '4px solid #000'
+                  }}>
+                    ORG REGISTER
+                  </Link>
+                </div>
               </div>
             </>
           )}

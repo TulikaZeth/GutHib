@@ -49,6 +49,7 @@ export default function OrgRegisterPage() {
       alignItems: 'center',
       justifyContent: 'center',
       padding: '2rem',
+      marginTop: '2rem',
     }}>
       <div style={{
         width: '100%',
@@ -59,16 +60,7 @@ export default function OrgRegisterPage() {
           marginBottom: '2rem',
           textAlign: 'center',
         }}>
-          <h1 style={{
-            color: '#000000',
-            fontSize: '3rem',
-            fontWeight: 900,
-            letterSpacing: '4px',
-            marginBottom: '0.5rem',
-            fontFamily: "'Courier New', monospace",
-          }}>
-            GUTHIB
-          </h1>
+         
           <p style={{
             color: '#666666',
             fontSize: '1rem',
@@ -130,14 +122,13 @@ export default function OrgRegisterPage() {
                 marginBottom: '0.5rem',
                 fontFamily: "'Courier New', monospace",
               }}>
-                GITHUB ORGANIZATION NAME
+                GITHUB ORGANIZATION NAME (OPTIONAL)
               </label>
               <input
                 type="text"
                 value={formData.githubOrgName}
                 onChange={(e) => setFormData({ ...formData, githubOrgName: e.target.value })}
-                placeholder="e.g., facebook, google"
-                required
+                placeholder="e.g., facebook, google, or any custom name"
                 style={{
                   width: '100%',
                   padding: '0.875rem',
@@ -151,6 +142,15 @@ export default function OrgRegisterPage() {
                   outline: 'none',
                 }}
               />
+              <p style={{
+                marginTop: '0.5rem',
+                fontSize: '0.75rem',
+                color: '#666666',
+                fontFamily: "'Courier New', monospace",
+                letterSpacing: '0.5px',
+              }}>
+                Can be a real GitHub org or any custom name
+              </p>
             </div>
 
             <div style={{ marginBottom: '1.5rem' }}>

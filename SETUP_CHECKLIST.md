@@ -6,9 +6,9 @@ Make sure you have your `.env.local` file with **MONGODB_URI** added!
 
 ```env
 # Add this to your existing .env.local:
-MONGODB_URI=mongodb://localhost:27017/guthub
+MONGODB_URI=mongodb://localhost:27017/GutHib
 # OR for Atlas:
-# MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/guthub
+# MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/GutHib
 ```
 
 ## 🚀 Step-by-Step Setup
@@ -71,13 +71,13 @@ Visit: http://localhost:3000
 **Option A: MongoDB Compass (GUI)**
 1. Open MongoDB Compass
 2. Connect with your MONGODB_URI
-3. Browse: `guthub` database → `users` collection
+3. Browse: `GutHib` database → `users` collection
 4. You should see your user!
 
 **Option B: Command Line**
 ```bash
 mongosh "your-mongodb-uri"
-use guthub
+use GutHib
 db.users.find().pretty()
 ```
 

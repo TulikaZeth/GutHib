@@ -34,7 +34,7 @@ export default function Footer() {
               borderBottom: '3px solid #ffffff',
               width: 'fit-content',
             }}>
-              GUTHUB
+              GutHib
             </h3>
             <p style={{
               color: '#999999',
@@ -162,7 +162,7 @@ export default function Footer() {
             letterSpacing: '1px',
             margin: 0,
           }}>
-            © 2025 GUTHUB. ALL RIGHTS RESERVED.
+            © 2025 GutHib. ALL RIGHTS RESERVED.
           </p>
 
           <div style={{

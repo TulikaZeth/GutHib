@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 
-export default function IssuesPage() {
+function IssuesPage() {
   const [issues, setIssues] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -15,6 +15,7 @@ export default function IssuesPage() {
       const response = await fetch('/api/issues/assigned');
       if (response.ok) {
         const data = await response.json();
+        console.log(data)
         setIssues(data.issues || []);
       }
     } catch (error) {
@@ -262,15 +263,16 @@ export default function IssuesPage() {
                         key={idx}
                         style={{
                           padding: '0.25rem 0.75rem',
-                          background: '#000000',
-                          color: '#999999',
+                          background: label.color ? `#${label.color}` : '#000000',
+                          color: '#ffffff',
                           fontFamily: "'Courier New', monospace",
                           fontSize: '0.7rem',
                           letterSpacing: '0.5px',
                           border: '1px solid #999999',
+                          borderRadius: '4px',
                         }}
                       >
-                        {label}
+                        {label.name}
                       </span>
                     ))}
                   </div>
@@ -307,3 +309,5 @@ export default function IssuesPage() {
     </div>
   );
 }
+
+export default IssuesPage;

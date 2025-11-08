@@ -57,7 +57,7 @@ export default function SignIn() {
       <div className="auth-box">
         <div className="auth-header">
           <h1 className="auth-title">SIGN IN</h1>
-          <p className="auth-subtitle">Welcome back to GutHub</p>
+          <p className="auth-subtitle">Welcome back to GutHib</p>
         </div>
 
         {error && (

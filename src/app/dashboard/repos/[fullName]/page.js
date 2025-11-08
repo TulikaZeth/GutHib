@@ -22,6 +22,7 @@ export default function RepoDetailPage() {
       const response = await fetch(`/api/repositorydetails/${encodeURIComponent(fullName)}/issues`);
       if (response.ok) {
         const data = await response.json();
+        console.log(data)
         setIssues(data.issues || []);
       }
     } catch (error) {
@@ -33,6 +34,8 @@ export default function RepoDetailPage() {
 
   const filteredIssues = issues.filter(issue => {
     if (filter === 'unassigned') return issue.state === 'open' && !issue.isAssignedToMe;
+    if (filter === 'assigned') return issue.isAssignedToMe;
+    if (filter === 'interested') return issue.autoCommented;
     if (filter === 'commented') return issue.commentedAt;
     return true;
   });
@@ -96,7 +99,7 @@ export default function RepoDetailPage() {
         marginBottom: '2rem',
         flexWrap: 'wrap',
       }}>
-        {['all', 'unassigned', 'commented'].map((f) => (
+        {['all', 'unassigned', 'assigned', 'interested', 'commented'].map((f) => (
           <button
             key={f}
             onClick={() => setFilter(f)}
@@ -150,10 +153,11 @@ export default function RepoDetailPage() {
               style={{
                 padding: '2rem',
                 background: '#000000',
-                border: '2px solid #ffffff',
-                borderLeft: issue.matchScore >= 75 ? '6px solid #00ff00' : '4px solid #ffffff',
+                border: issue.isAssignedToMe ? '3px solid #00ff00' : '2px solid #ffffff',
+                borderLeft: issue.matchScore >= 75 ? '6px solid #00ff00' : issue.matchScore >= 50 ? '6px solid #ffff00' : '4px solid #ffffff',
                 borderBottom: '4px solid #ffffff',
                 transition: 'all 0.3s ease',
+                position: 'relative',
               }}
             >
               {/* Issue Header */}
@@ -164,16 +168,46 @@ export default function RepoDetailPage() {
                 marginBottom: '1rem',
               }}>
                 <div style={{ flex: 1 }}>
-                  <h3 style={{
-                    color: '#ffffff',
-                    fontSize: '1.25rem',
-                    fontWeight: 'bold',
-                    letterSpacing: '1px',
-                    marginBottom: '0.5rem',
-                    fontFamily: "'Courier New', monospace",
-                  }}>
-                    #{issue.issueNumber} - {issue.title}
-                  </h3>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '0.5rem' }}>
+                    <h3 style={{
+                      color: '#ffffff',
+                      fontSize: '1.25rem',
+                      fontWeight: 'bold',
+                      letterSpacing: '1px',
+                      margin: 0,
+                      fontFamily: "'Courier New', monospace",
+                    }}>
+                      #{issue.issueNumber} - {issue.title}
+                    </h3>
+                    {issue.isAssignedToMe && (
+                      <span style={{
+                        padding: '0.25rem 0.75rem',
+                        background: '#00ff00',
+                        color: '#000000',
+                        fontFamily: "'Courier New', monospace",
+                        fontSize: '0.7rem',
+                        fontWeight: 'bold',
+                        letterSpacing: '0.5px',
+                        border: '2px solid #000000',
+                      }}>
+                        ASSIGNED TO YOU
+                      </span>
+                    )}
+                    {issue.autoCommented && (
+                      <span style={{
+                        padding: '0.25rem 0.75rem',
+                        background: '#ffff00',
+                        color: '#000000',
+                        fontFamily: "'Courier New', monospace",
+                        fontSize: '0.7rem',
+                        fontWeight: 'bold',
+                        letterSpacing: '0.5px',
+                        border: '2px solid #000000',
+                      }}>
+                        COMMENTED
+                      </span>
+                    )}
+                  </div>
                 </div>
                 <div style={{
                   padding: '0.5rem 1rem',
@@ -283,15 +317,16 @@ export default function RepoDetailPage() {
                         key={idx}
                         style={{
                           padding: '0.25rem 0.75rem',
-                          background: '#000000',
-                          color: '#999999',
+                          background: label.color ? `#${label.color}` : '#999999',
+                          color: '#ffffff',
                           fontFamily: "'Courier New', monospace",
                           fontSize: '0.7rem',
                           letterSpacing: '0.5px',
                           border: '1px solid #999999',
+                          borderRadius: '4px',
                         }}
                       >
-                        {label}
+                        {label.name}
                       </span>
                     ))}
                   </div>

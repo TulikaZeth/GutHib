@@ -163,7 +163,7 @@ cp .env.local.example .env.local
 ```bash
 # Install MongoDB locally
 # Then set:
-MONGODB_URI=mongodb://localhost:27017/guthub
+MONGODB_URI=mongodb://localhost:27017/GutHib
 ```
 
 **Option B: MongoDB Atlas (Cloud - FREE)**
@@ -231,7 +231,7 @@ User Signs Up → Auth0 → Callback Handler → MongoDB User Created
 **MongoDB Compass (GUI):**
 1. Download from mongodb.com/try/download/compass
 2. Connect with your MONGODB_URI
-3. Browse `guthub` database → `users` collection
+3. Browse `GutHib` database → `users` collection
 
 **Command Line:**
 ```bash
@@ -239,7 +239,7 @@ User Signs Up → Auth0 → Callback Handler → MongoDB User Created
 mongosh "your-mongodb-uri"
 
 # View all users
-use guthub
+use GutHib
 db.users.find().pretty()
 
 # Find specific user

@@ -1,4 +1,4 @@
-# Authentication System - GutHub
+# Authentication System - GutHib
 
 A dark-themed authentication system built with **Next.js 16**, **Auth0**, and **JWT tokens**.
 

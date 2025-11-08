@@ -11,7 +11,7 @@ const MONGODB_URI = process.env.MONGODB_URI;
 if (!MONGODB_URI) {
   console.error('❌ ERROR: MONGODB_URI not found in .env.local');
   console.log('\nPlease add MONGODB_URI to your .env.local file:');
-  console.log('MONGODB_URI=mongodb://localhost:27017/guthub');
+  console.log('MONGODB_URI=mongodb://localhost:27017/GutHib');
   process.exit(1);
 }
 

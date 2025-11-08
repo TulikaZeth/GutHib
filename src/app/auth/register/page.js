@@ -73,7 +73,7 @@ export default function Register() {
       <div className="auth-box">
         <div className="auth-header">
           <h1 className="auth-title">REGISTER</h1>
-          <p className="auth-subtitle">Create your GutHub account</p>
+          <p className="auth-subtitle">Create your GutHib account</p>
         </div>
 
         {error && (

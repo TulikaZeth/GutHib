@@ -3,7 +3,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 
 export const metadata = {
-  title: "GUTHUB - GitHub Issue Matcher",
+  title: "GutHib - GitHub Issue Matcher",
   description: "Find GitHub issues that match your skills and interests",
 };
 

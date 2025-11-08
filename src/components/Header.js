@@ -51,7 +51,7 @@ export default function Header() {
             e.currentTarget.style.boxShadow = 'none';
           }}
         >
-          GUTHUB
+          GutHib
         </Link>
 
         {/* Navigation */}

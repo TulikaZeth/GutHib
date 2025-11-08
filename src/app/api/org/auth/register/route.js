@@ -8,9 +8,9 @@ export async function POST(request) {
   try {
     const { email, password, orgName, githubOrgName, description } = await request.json();
 
-    if (!email || !password || !orgName || !githubOrgName) {
+    if (!email || !password || !orgName) {
       return NextResponse.json(
-        { error: 'Email, password, organization name, and GitHub org name are required' },
+        { error: 'Email, password, and organization name are required' },
         { status: 400 }
       );
     }
@@ -26,20 +26,25 @@ export async function POST(request) {
       );
     }
 
-    // Verify GitHub organization exists
-    const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
-    const ghResponse = await fetch(`https://api.github.com/orgs/${githubOrgName}`, {
-      headers: {
-        Authorization: `token ${GITHUB_TOKEN}`,
-        Accept: 'application/vnd.github.v3+json',
-      },
-    });
+    // Verify GitHub organization exists (optional - only if GitHub token is available)
+    if (githubOrgName && process.env.GITHUB_TOKEN) {
+      try {
+        const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
+        const ghResponse = await fetch(`https://api.github.com/orgs/${githubOrgName}`, {
+          headers: {
+            Authorization: `token ${GITHUB_TOKEN}`,
+            Accept: 'application/vnd.github.v3+json',
+          },
+        });
 
-    if (!ghResponse.ok) {
-      return NextResponse.json(
-        { error: 'GitHub organization not found' },
-        { status: 404 }
-      );
+        // Only warn if org not found, but continue with registration
+        if (!ghResponse.ok) {
+          console.warn(`GitHub organization '${githubOrgName}' not found, but continuing with registration`);
+        }
+      } catch (error) {
+        // If GitHub verification fails, just log and continue
+        console.warn('GitHub verification failed:', error.message);
+      }
     }
 
     // Hash password

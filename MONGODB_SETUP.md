@@ -24,9 +24,9 @@ AUTH0_CLIENT_SECRET=your-client-secret
 JWT_SECRET=your-jwt-secret
 
 # MongoDB Configuration
-MONGODB_URI=mongodb://localhost:27017/guthub
+MONGODB_URI=mongodb://localhost:27017/GutHib
 # OR for MongoDB Atlas:
-# MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/guthub?retryWrites=true&w=majority
+# MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/GutHib?retryWrites=true&w=majority
 ```
 
 ## 🗄️ MongoDB Setup Options
@@ -44,7 +44,7 @@ MONGODB_URI=mongodb://localhost:27017/guthub
 
 3. **Use Local Connection String**
    ```env
-   MONGODB_URI=mongodb://localhost:27017/guthub
+   MONGODB_URI=mongodb://localhost:27017/GutHib
    ```
 
 ### Option 2: MongoDB Atlas (Cloud - FREE)
@@ -75,11 +75,11 @@ MONGODB_URI=mongodb://localhost:27017/guthub
    - Choose "Connect your application"
    - Copy the connection string
    - Replace `<password>` with your database user password
-   - Replace `<dbname>` with `guthub`
+   - Replace `<dbname>` with `GutHib`
 
 6. **Add to .env.local**
    ```env
-   MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/guthub?retryWrites=true&w=majority
+   MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/GutHib?retryWrites=true&w=majority
    ```
 
 ## 📊 User Model Schema
@@ -243,13 +243,13 @@ Run: `node test-db.js`
 **Using MongoDB Compass (GUI):**
 1. Download: https://www.mongodb.com/try/download/compass
 2. Connect using your MONGODB_URI
-3. Browse `guthub` database
+3. Browse `GutHib` database
 4. View `users` collection
 
 **Using MongoDB Shell:**
 ```bash
 mongosh "your-connection-string"
-use guthub
+use GutHib
 db.users.find().pretty()
 ```
 

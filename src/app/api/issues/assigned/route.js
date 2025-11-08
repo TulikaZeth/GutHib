@@ -2,15 +2,13 @@ import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { jwtVerify } from 'jose';
 import connectDB from '@/lib/db';
-import Issue from '@/models/Issue';
-import Repository from '@/models/Repository';
 import User from '@/models/User';
 
 const secret = new TextEncoder().encode(process.env.AUTH0_SECRET || 'your-secret-key-min-32-chars-long!');
 
 /**
  * GET /api/issues/assigned
- * Get all issues assigned to the user
+ * Get all issues assigned to the user from GitHub
  */
 export async function GET() {
   try {
@@ -45,33 +43,77 @@ export async function GET() {
       );
     }
 
-    // Get all issues assigned to this user
-    const issues = await Issue.find({
-      userId: user._id,
-      isAssignedToMe: true,
-    })
-      .sort({ createdAt: -1 })
-      .populate('repositoryId')
-      .lean();
+    // Get GitHub username
+    const githubUsername = user.githubUsername;
+    if (!githubUsername) {
+      return NextResponse.json(
+        { error: 'GitHub username not found for user' },
+        { status: 404 }
+      );
+    }
+
+    // Fetch assigned issues from GitHub API
+    const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
+    if (!GITHUB_TOKEN) {
+      return NextResponse.json(
+        { error: 'GitHub token not configured' },
+        { status: 500 }
+      );
+    }
+
+    // Search for issues assigned to the user
+    const searchQuery = `assignee:${githubUsername} is:issue`;
+    const issuesResponse = await fetch(
+      `https://api.github.com/search/issues?q=${encodeURIComponent(searchQuery)}&sort=updated&order=desc&per_page=10`,
+      {
+        headers: {
+          Authorization: `token ${GITHUB_TOKEN}`,
+          Accept: 'application/vnd.github.v3+json',
+        },
+      }
+    );
+
+    if (!issuesResponse.ok) {
+      return NextResponse.json(
+        { error: 'Failed to fetch assigned issues from GitHub' },
+        { status: issuesResponse.status }
+      );
+    }
+
+    const searchResults = await issuesResponse.json();
+
+    // Format the issues data to match the expected response format
+    const assignedIssues = searchResults.items.map(issue => ({
+      id: issue.id,
+      issueNumber: issue.number,
+      title: issue.title,
+      body: issue.body,
+      url: issue.html_url,
+      repository: issue.repository_url.split('/').slice(-2).join('/'),
+      state: issue.state,
+      labels: issue.labels.map(label => ({
+        name: label.name,
+        color: label.color,
+      })),
+      assignedAt: issue.updated_at,
+      createdAt: issue.created_at,
+      closedAt: issue.closed_at,
+      assignees: issue.assignees.map(assignee => ({
+        username: assignee.login,
+        avatar: assignee.avatar_url,
+        url: assignee.html_url,
+      })),
+      author: {
+        username: issue.user.login,
+        avatar: issue.user.avatar_url,
+        url: issue.user.html_url,
+      },
+    }));
 
     return NextResponse.json({
       success: true,
-      issues: issues.map(issue => ({
-        id: issue._id,
-        issueNumber: issue.issueNumber,
-        title: issue.title,
-        body: issue.body,
-        url: issue.url,
-        repository: issue.repositoryId?.fullName || 'Unknown',
-        state: issue.state,
-        labels: issue.labels,
-        requiredSkills: issue.requiredSkills,
-        expertise: issue.expertise,
-        estimatedHours: issue.estimatedHours,
-        matchScore: issue.matchScore,
-        commentedAt: issue.commentedAt,
-        assignedAt: issue.updatedAt,
-      })),
+      issues: assignedIssues,
+      totalCount: searchResults.total_count,
     });
   } catch (error) {
     console.error('Fetch issues error:', error);
