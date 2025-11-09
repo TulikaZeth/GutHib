@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/headers';
+import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { jwtVerify } from 'jose';
 import connectDB from '@/lib/db';
