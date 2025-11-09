@@ -1,36 +1,60 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+Guthib
+Guthib is an intelligent platform that connects developers with organizations by matching them to relevant issues based on their skills, preferences, and activity. It makes open-source collaboration smarter, faster, and more personalized.
 
-## Getting Started
+Overview
+Guthib operates through two main portals — one for developers and one for organizations. Developers can create detailed profiles with their GitHub links, resumes, and issue preferences, while organizations can efficiently assign issues to the most suitable contributors.
 
-First, run the development server:
+The platform offers two subscription tiers:
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+Free Plan: Access to general issues and organizations.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Premium Plan: Exclusive access to premium organizations, available through subscription or earned via consistent GitHub activity.
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+Guthib also provides a mobile app for handy management, enabling users and organizations to track issues, updates, and progress seamlessly on the go.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Core Features
+AI-based skill and activity analysis for precise issue matching
 
-## Learn More
+Smart workload management for fair task distribution
 
-To learn more about Next.js, take a look at the following resources:
+Automated contributor verification through GitHub activity
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Secure authentication using Auth0
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Reliable data management with MongoDB
 
-## Deploy on Vercel
+Integrated testing with Qyrus API for platform stability
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Agentic Gemini API for maintaining and analyzing developer and organization identities
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Mobile app for convenient real-time issue and profile management
+
+
+Technical Stack
+Frontend: Base44
+Backend: Node.js, Express
+Database: MongoDB
+Authentication: Auth0
+APIs: Agentic Gemini, Qyrus API
+App: React Native (for mobile version)
+
+
+Challenges Faced
+During large-scale testing, API timeout issues occurred with GitHub and Gemini. These were resolved using optimized request batching, async management, and scalable API handling strategies.
+
+Business Model
+Guthib follows a freemium model with subscription-based revenue from organizations and developers. Premium users access advanced analytics, exclusive projects, and verified contributor networks.
+
+Impact
+Guthib simplifies how organizations find skilled contributors and how developers connect with meaningful work. With AI-powered matching, a mobile app for seamless access, and smart workload management, it bridges the gap between talent and opportunity — redefining open-source collaboration.
+
+
+Team : 
+Leader - Vaibhav Gupta - Full Stack Developer - Worked on Integration 
+and the WebApp.
+
+Sumit Rajput - Frontend Developer and UI/UX engineer - Worked on frontend and project documentation
+
+Pratyush Mehra - App Developer - Worked on App used for handy management 
+
+Tulika Anand - AIML Developer - Worked on backend apis
