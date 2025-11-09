@@ -54,7 +54,7 @@ const OrgIssueAssignmentSchema = new mongoose.Schema({
   
   status: {
     type: String,
-    enum: ['pending', 'assigned', 'in_progress', 'completed', 'cancelled'],
+    enum: ['pending', 'assigned', 'recommended', 'in_progress', 'completed', 'cancelled'],
     default: 'pending',
   },
   

@@ -53,17 +53,57 @@ export default function OrgRepoIssuesPage({ params }) {
       const data = await response.json();
 
       if (response.ok) {
-        // Refresh issues list
-        await fetchIssues();
-        // Show analysis modal
+        // Show developer selection modal instead of auto-assigning
         setAnalysisModal(data);
       } else {
-        alert(`Failed to assign: ${data.error}`);
+        alert(`Failed to get developers: ${data.error}`);
       }
     } catch (err) {
-      alert('An error occurred while assigning the issue');
+      alert('An error occurred while fetching developers');
     } finally {
       setAssigning(prev => ({ ...prev, [issueNumber]: false }));
+    }
+  };
+
+  const handleSelectDeveloper = async (developer) => {
+    setAssigning(prev => ({ ...prev, [analysisModal.issue.number]: true }));
+    
+    try {
+      const response = await fetch('/api/org/issues/assign-developer', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          repoName,
+          issueNumber: analysisModal.issue.number,
+          developerId: developer.id,
+          developerUsername: developer.githubUsername,
+          matchScore: developer.scores.matchScore,
+          activityScore: developer.scores.activityScore,
+          workloadScore: developer.scores.workloadScore,
+          finalScore: developer.scores.finalScore,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        if (data.isRecommendation) {
+          alert(`✅ Recommended @${developer.githubUsername}!\n\n⚠️ ${data.warning}\n\nA comment has been posted to the issue with the recommendation and roadmap.`);
+        } else {
+          alert(`✅ Successfully assigned to @${developer.githubUsername}!`);
+        }
+        setAnalysisModal(null);
+        // Refresh issues list
+        await fetchIssues();
+      } else {
+        console.error('Assignment failed:', data);
+        alert(`❌ Failed to assign: ${data.error}\n${data.details || ''}\nStatus: ${data.status || response.status}`);
+      }
+    } catch (err) {
+      console.error('Assignment error:', err);
+      alert(`❌ An error occurred while assigning the issue: ${err.message}`);
+    } finally {
+      setAssigning(prev => ({ ...prev, [analysisModal.issue.number]: false }));
     }
   };
 
@@ -396,7 +436,7 @@ export default function OrgRepoIssuesPage({ params }) {
         )}
       </div>
 
-      {/* Analysis Modal */}
+      {/* Developer Selection Modal */}
       {analysisModal && (
         <div style={{
           position: 'fixed',
@@ -416,7 +456,7 @@ export default function OrgRepoIssuesPage({ params }) {
           <div style={{
             background: '#ffffff',
             border: '4px solid #000000',
-            maxWidth: '800px',
+            maxWidth: '900px',
             maxHeight: '90vh',
             overflow: 'auto',
             padding: '2rem',
@@ -428,319 +468,58 @@ export default function OrgRepoIssuesPage({ params }) {
               fontSize: '1.5rem',
               fontWeight: 900,
               letterSpacing: '2px',
-              marginBottom: '1.5rem',
+              marginBottom: '1rem',
               fontFamily: "'Courier New', monospace",
             }}>
-              ✅ ASSIGNMENT SUCCESSFUL
+              👥 SELECT DEVELOPER TO ASSIGN
             </h2>
-
-            {/* Assigned Developer */}
+            
+            {/* Issue Info */}
             <div style={{
-              padding: '1.5rem',
-              background: '#000000',
-              color: '#ffffff',
+              padding: '1rem',
+              background: '#f5f5f5',
+              border: '2px solid #000000',
               marginBottom: '1.5rem',
-              border: '2px solid #ffffff',
             }}>
               <p style={{
-                fontSize: '0.875rem',
+                fontSize: '0.75rem',
+                color: '#666666',
                 letterSpacing: '1px',
                 marginBottom: '0.5rem',
                 fontFamily: "'Courier New', monospace",
               }}>
-                ASSIGNED TO
+                ISSUE #{analysisModal.issue?.number}
               </p>
               <p style={{
-                fontSize: '1.5rem',
-                fontWeight: 'bold',
-                letterSpacing: '1px',
-                fontFamily: "'Courier New', monospace",
-              }}>
-                @{analysisModal.assignedTo}
-              </p>
-            </div>
-
-            {/* AI Analysis */}
-            <div style={{
-              padding: '1.5rem',
-              border: '2px solid #000000',
-              background: '#f5f5f5',
-              marginBottom: '1.5rem',
-            }}>
-              <h3 style={{
-                color: '#000000',
                 fontSize: '1rem',
                 fontWeight: 'bold',
-                letterSpacing: '1.5px',
-                marginBottom: '1rem',
+                color: '#000000',
+                marginBottom: '0.5rem',
                 fontFamily: "'Courier New', monospace",
               }}>
-                🤖 AI ANALYSIS
-              </h3>
-              
-              <div style={{ marginBottom: '1rem' }}>
-                <p style={{
-                  color: '#666666',
-                  fontSize: '0.75rem',
-                  letterSpacing: '1px',
-                  marginBottom: '0.5rem',
-                  fontFamily: "'Courier New', monospace",
-                }}>
-                  DEVELOPERS ANALYZED
-                </p>
-                <p style={{
-                  color: '#000000',
-                  fontSize: '1.125rem',
-                  fontWeight: 'bold',
-                  fontFamily: "'Courier New', monospace",
-                }}>
-                  {analysisModal.analysis?.totalDevelopersAnalyzed || 0}
-                </p>
-              </div>
-
-              {analysisModal.analysis?.requiredSkills && analysisModal.analysis.requiredSkills.length > 0 && (
-                <div style={{ marginBottom: '1rem' }}>
-                  <p style={{
-                    color: '#666666',
-                    fontSize: '0.75rem',
-                    letterSpacing: '1px',
-                    marginBottom: '0.5rem',
-                    fontFamily: "'Courier New', monospace",
-                  }}>
-                    REQUIRED SKILLS
-                  </p>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
-                    {analysisModal.analysis.requiredSkills.map((skill, idx) => (
-                      <span key={idx} style={{
-                        padding: '0.5rem 0.75rem',
-                        background: '#000000',
-                        color: '#ffffff',
-                        fontSize: '0.75rem',
-                        fontWeight: 'bold',
-                        fontFamily: "'Courier New', monospace",
-                      }}>
-                        {skill.skill} ({skill.importance}/10)
-                      </span>
-                    ))}
-                  </div>
+                {analysisModal.issue?.title}
+              </p>
+              {analysisModal.issue?.requiredSkills && analysisModal.issue.requiredSkills.length > 0 && (
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginTop: '0.5rem' }}>
+                  {analysisModal.issue.requiredSkills.slice(0, 5).map((skill, idx) => (
+                    <span key={idx} style={{
+                      padding: '0.25rem 0.5rem',
+                      background: '#000000',
+                      color: '#ffffff',
+                      fontSize: '0.675rem',
+                      fontFamily: "'Courier New', monospace",
+                    }}>
+                      {skill.skill}
+                    </span>
+                  ))}
                 </div>
               )}
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                <div>
-                  <p style={{
-                    color: '#666666',
-                    fontSize: '0.75rem',
-                    letterSpacing: '1px',
-                    marginBottom: '0.25rem',
-                    fontFamily: "'Courier New', monospace",
-                  }}>
-                    EXPERTISE NEEDED
-                  </p>
-                  <p style={{
-                    color: '#000000',
-                    fontSize: '0.875rem',
-                    fontWeight: 'bold',
-                    fontFamily: "'Courier New', monospace",
-                    textTransform: 'uppercase',
-                  }}>
-                    {analysisModal.analysis?.expertise || 'N/A'}
-                  </p>
-                </div>
-                <div>
-                  <p style={{
-                    color: '#666666',
-                    fontSize: '0.75rem',
-                    letterSpacing: '1px',
-                    marginBottom: '0.25rem',
-                    fontFamily: "'Courier New', monospace",
-                  }}>
-                    ESTIMATED HOURS
-                  </p>
-                  <p style={{
-                    color: '#000000',
-                    fontSize: '0.875rem',
-                    fontWeight: 'bold',
-                    fontFamily: "'Courier New', monospace",
-                  }}>
-                    {analysisModal.analysis?.estimatedHours || 'N/A'}h
-                  </p>
-                </div>
-              </div>
             </div>
 
-            {/* Scoring Breakdown */}
-            <div style={{
-              padding: '1.5rem',
-              border: '2px solid #000000',
-              marginBottom: '1.5rem',
-            }}>
-              <h3 style={{
-                color: '#000000',
-                fontSize: '1rem',
-                fontWeight: 'bold',
-                letterSpacing: '1.5px',
-                marginBottom: '1rem',
-                fontFamily: "'Courier New', monospace",
-              }}>
-                📊 SELECTION CRITERIA
-              </h3>
-
-              <div style={{ display: 'grid', gap: '1rem' }}>
-                <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-                    <span style={{
-                      color: '#666666',
-                      fontSize: '0.75rem',
-                      letterSpacing: '1px',
-                      fontFamily: "'Courier New', monospace",
-                    }}>
-                      SKILL MATCH (50% WEIGHT)
-                    </span>
-                    <span style={{
-                      color: '#000000',
-                      fontSize: '0.875rem',
-                      fontWeight: 'bold',
-                      fontFamily: "'Courier New', monospace",
-                    }}>
-                      {analysisModal.matchScore}%
-                    </span>
-                  </div>
-                  <div style={{
-                    height: '8px',
-                    background: '#e0e0e0',
-                    border: '1px solid #000000',
-                  }}>
-                    <div style={{
-                      height: '100%',
-                      width: `${analysisModal.matchScore}%`,
-                      background: '#000000',
-                    }} />
-                  </div>
-                  <p style={{
-                    color: '#666666',
-                    fontSize: '0.75rem',
-                    marginTop: '0.25rem',
-                    fontFamily: "'Courier New', monospace",
-                  }}>
-                    {analysisModal.analysis?.selectionReason?.skillMatch}
-                  </p>
-                </div>
-
-                <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-                    <span style={{
-                      color: '#666666',
-                      fontSize: '0.75rem',
-                      letterSpacing: '1px',
-                      fontFamily: "'Courier New', monospace",
-                    }}>
-                      ACTIVITY SCORE (30% WEIGHT)
-                    </span>
-                    <span style={{
-                      color: '#000000',
-                      fontSize: '0.875rem',
-                      fontWeight: 'bold',
-                      fontFamily: "'Courier New', monospace",
-                    }}>
-                      {analysisModal.activityScore}%
-                    </span>
-                  </div>
-                  <div style={{
-                    height: '8px',
-                    background: '#e0e0e0',
-                    border: '1px solid #000000',
-                  }}>
-                    <div style={{
-                      height: '100%',
-                      width: `${analysisModal.activityScore}%`,
-                      background: '#000000',
-                    }} />
-                  </div>
-                  <p style={{
-                    color: '#666666',
-                    fontSize: '0.75rem',
-                    marginTop: '0.25rem',
-                    fontFamily: "'Courier New', monospace",
-                  }}>
-                    {analysisModal.analysis?.selectionReason?.activity}
-                  </p>
-                </div>
-
-                <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-                    <span style={{
-                      color: '#666666',
-                      fontSize: '0.75rem',
-                      letterSpacing: '1px',
-                      fontFamily: "'Courier New', monospace",
-                    }}>
-                      WORKLOAD SCORE (20% WEIGHT)
-                    </span>
-                    <span style={{
-                      color: '#000000',
-                      fontSize: '0.875rem',
-                      fontWeight: 'bold',
-                      fontFamily: "'Courier New', monospace",
-                    }}>
-                      {analysisModal.workloadScore}%
-                    </span>
-                  </div>
-                  <div style={{
-                    height: '8px',
-                    background: '#e0e0e0',
-                    border: '1px solid #000000',
-                  }}>
-                    <div style={{
-                      height: '100%',
-                      width: `${analysisModal.workloadScore}%`,
-                      background: '#000000',
-                    }} />
-                  </div>
-                  <p style={{
-                    color: '#666666',
-                    fontSize: '0.75rem',
-                    marginTop: '0.25rem',
-                    fontFamily: "'Courier New', monospace",
-                  }}>
-                    {analysisModal.analysis?.selectionReason?.workload}
-                  </p>
-                </div>
-
-                <div style={{
-                  padding: '1rem',
-                  background: '#000000',
-                  color: '#ffffff',
-                  border: '2px solid #ffffff',
-                }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span style={{
-                      fontSize: '0.875rem',
-                      letterSpacing: '1px',
-                      fontFamily: "'Courier New', monospace",
-                    }}>
-                      FINAL SCORE
-                    </span>
-                    <span style={{
-                      fontSize: '1.25rem',
-                      fontWeight: 'bold',
-                      fontFamily: "'Courier New', monospace",
-                    }}>
-                      {analysisModal.finalScore}%
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Top Candidates */}
-            {analysisModal.analysis?.topCandidates && analysisModal.analysis.topCandidates.length > 0 && (
-              <div style={{
-                padding: '1.5rem',
-                border: '2px solid #000000',
-                background: '#f5f5f5',
-                marginBottom: '1.5rem',
-              }}>
+            
+            {/* Top Developers List */}
+            {analysisModal.topDevelopers && analysisModal.topDevelopers.length > 0 ? (
+              <div style={{ marginBottom: '1.5rem' }}>
                 <h3 style={{
                   color: '#000000',
                   fontSize: '1rem',
@@ -749,98 +528,233 @@ export default function OrgRepoIssuesPage({ params }) {
                   marginBottom: '1rem',
                   fontFamily: "'Courier New', monospace",
                 }}>
-                  🏆 TOP 3 CANDIDATES
+                  🏆 TOP {analysisModal.topDevelopers.length} MATCHES
                 </h3>
-                {analysisModal.analysis.topCandidates.map((candidate, idx) => (
+                
+                {analysisModal.topDevelopers.map((dev, idx) => (
                   <div key={idx} style={{
-                    padding: '1rem',
+                    padding: '1.5rem',
                     background: idx === 0 ? '#000000' : '#ffffff',
                     color: idx === 0 ? '#ffffff' : '#000000',
-                    border: '2px solid #000000',
-                    marginBottom: idx < analysisModal.analysis.topCandidates.length - 1 ? '0.5rem' : 0,
+                    border: idx === 0 ? '4px solid #000000' : '2px solid #000000',
+                    marginBottom: '1rem',
                   }}>
+                    {/* Developer Header */}
                     <div style={{
                       display: 'flex',
                       justifyContent: 'space-between',
-                      alignItems: 'center',
-                      marginBottom: '0.5rem',
+                      alignItems: 'start',
+                      marginBottom: '1rem',
                     }}>
-                      <span style={{
+                      <div style={{ flex: 1 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
+                          <span style={{
+                            padding: '0.25rem 0.5rem',
+                            background: idx === 0 ? '#ffffff' : '#000000',
+                            color: idx === 0 ? '#000000' : '#ffffff',
+                            fontSize: '0.75rem',
+                            fontWeight: 'bold',
+                            fontFamily: "'Courier New', monospace",
+                          }}>
+                            #{idx + 1}
+                          </span>
+                          <p style={{
+                            fontSize: '1.125rem',
+                            fontWeight: 'bold',
+                            fontFamily: "'Courier New', monospace",
+                          }}>
+                            @{dev.githubUsername}
+                          </p>
+                          {dev.isRegistered && (
+                            <span style={{
+                              padding: '0.25rem 0.5rem',
+                              background: idx === 0 ? '#ffffff' : '#000000',
+                              color: idx === 0 ? '#000000' : '#ffffff',
+                              fontSize: '0.675rem',
+                              fontWeight: 'bold',
+                              fontFamily: "'Courier New', monospace",
+                            }}>
+                              ✓ REGISTERED
+                            </span>
+                          )}
+                        </div>
+                        {dev.name && (
+                          <p style={{
+                            fontSize: '0.875rem',
+                            opacity: 0.8,
+                            fontFamily: "'Courier New', monospace",
+                          }}>
+                            {dev.name} {dev.email && `• ${dev.email}`}
+                          </p>
+                        )}
+                      </div>
+                      <div style={{
+                        padding: '0.5rem 1rem',
+                        background: idx === 0 ? '#ffffff' : '#000000',
+                        color: idx === 0 ? '#000000' : '#ffffff',
+                        fontSize: '1.25rem',
+                        fontWeight: 'bold',
+                        fontFamily: "'Courier New', monospace",
+                        border: idx === 0 ? '2px solid #000000' : '2px solid #ffffff',
+                      }}>
+                        {dev.scores?.finalScore || 0}%
+                      </div>
+                    </div>
+
+                    {/* Scores Breakdown */}
+                    <div style={{
+                      display: 'grid',
+                      gridTemplateColumns: '1fr 1fr 1fr',
+                      gap: '0.75rem',
+                      marginBottom: '1rem',
+                      padding: '0.75rem',
+                      background: idx === 0 ? 'rgba(255,255,255,0.1)' : '#f5f5f5',
+                      border: idx === 0 ? '1px solid rgba(255,255,255,0.3)' : '1px solid #cccccc',
+                    }}>
+                      <div>
+                        <p style={{
+                          fontSize: '0.675rem',
+                          opacity: 0.7,
+                          marginBottom: '0.25rem',
+                          fontFamily: "'Courier New', monospace",
+                        }}>
+                          SKILL MATCH
+                        </p>
+                        <p style={{
+                          fontSize: '1rem',
+                          fontWeight: 'bold',
+                          fontFamily: "'Courier New', monospace",
+                        }}>
+                          {dev.scores?.matchScore || 0}%
+                        </p>
+                      </div>
+                      <div>
+                        <p style={{
+                          fontSize: '0.675rem',
+                          opacity: 0.7,
+                          marginBottom: '0.25rem',
+                          fontFamily: "'Courier New', monospace",
+                        }}>
+                          ACTIVITY
+                        </p>
+                        <p style={{
+                          fontSize: '1rem',
+                          fontWeight: 'bold',
+                          fontFamily: "'Courier New', monospace",
+                        }}>
+                          {dev.scores?.activityScore || 0}%
+                        </p>
+                      </div>
+                      <div>
+                        <p style={{
+                          fontSize: '0.675rem',
+                          opacity: 0.7,
+                          marginBottom: '0.25rem',
+                          fontFamily: "'Courier New', monospace",
+                        }}>
+                          WORKLOAD
+                        </p>
+                        <p style={{
+                          fontSize: '1rem',
+                          fontWeight: 'bold',
+                          fontFamily: "'Courier New', monospace",
+                        }}>
+                          {dev.scores?.workloadScore || 0}%
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Skills */}
+                    {dev.skills && dev.skills.length > 0 && (
+                      <div style={{ marginBottom: '1rem' }}>
+                        <p style={{
+                          fontSize: '0.675rem',
+                          opacity: 0.7,
+                          letterSpacing: '1px',
+                          marginBottom: '0.5rem',
+                          fontFamily: "'Courier New', monospace",
+                        }}>
+                          SKILLS
+                        </p>
+                        <div style={{
+                          display: 'flex',
+                          flexWrap: 'wrap',
+                          gap: '0.5rem',
+                        }}>
+                          {dev.skills.slice(0, 8).map((skill, i) => (
+                            <span key={i} style={{
+                              padding: '0.25rem 0.5rem',
+                              border: idx === 0 ? '1px solid rgba(255,255,255,0.5)' : '1px solid #000000',
+                              fontSize: '0.675rem',
+                              fontFamily: "'Courier New', monospace",
+                            }}>
+                              {typeof skill === 'string' ? skill : skill.skill || skill.name} {typeof skill === 'object' && skill.score ? `(${skill.score}%)` : ''}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Select Button */}
+                    <button
+                      onClick={() => handleSelectDeveloper(dev)}
+                      disabled={assigning[analysisModal.issue.number]}
+                      style={{
+                        width: '100%',
+                        padding: '0.75rem',
+                        background: idx === 0 ? '#ffffff' : '#000000',
+                        color: idx === 0 ? '#000000' : '#ffffff',
+                        border: idx === 0 ? '2px solid #000000' : '2px solid #ffffff',
+                        fontFamily: "'Courier New', monospace",
                         fontSize: '0.875rem',
                         fontWeight: 'bold',
-                        fontFamily: "'Courier New', monospace",
-                      }}>
-                        #{idx + 1} @{candidate.username}
-                      </span>
-                      <span style={{
-                        fontSize: '1rem',
-                        fontWeight: 'bold',
-                        fontFamily: "'Courier New', monospace",
-                      }}>
-                        {candidate.finalScore}%
-                      </span>
-                    </div>
-                    <div style={{
-                      display: 'flex',
-                      gap: '1rem',
-                      fontSize: '0.75rem',
-                      fontFamily: "'Courier New', monospace",
-                    }}>
-                      <span>Skills: {candidate.matchScore}%</span>
-                      <span>Activity: {candidate.activityScore}%</span>
-                      <span>Workload: {candidate.workloadScore}%</span>
-                    </div>
+                        letterSpacing: '1px',
+                        cursor: assigning[analysisModal.issue.number] ? 'not-allowed' : 'pointer',
+                        opacity: assigning[analysisModal.issue.number] ? 0.6 : 1,
+                      }}
+                    >
+                      {assigning[analysisModal.issue.number] ? 'ASSIGNING...' : 'SELECT THIS DEVELOPER'}
+                    </button>
                   </div>
                 ))}
               </div>
+            ) : (
+              <div style={{
+                padding: '2rem',
+                textAlign: 'center',
+                border: '2px solid #000000',
+                background: '#f5f5f5',
+                marginBottom: '1.5rem',
+              }}>
+                <p style={{
+                  color: '#666666',
+                  fontFamily: "'Courier New', monospace",
+                }}>
+                  No matching developers found
+                </p>
+              </div>
             )}
 
-            {/* Actions */}
-            <div style={{ display: 'flex', gap: '1rem' }}>
-              {analysisModal.commentUrl && (
-                <a
-                  href={analysisModal.commentUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{
-                    flex: 1,
-                    padding: '1rem',
-                    background: '#000000',
-                    color: '#ffffff',
-                    textAlign: 'center',
-                    textDecoration: 'none',
-                    border: '2px solid #ffffff',
-                    borderLeft: '4px solid #ffffff',
-                    borderBottom: '4px solid #ffffff',
-                    fontFamily: "'Courier New', monospace",
-                    fontSize: '0.875rem',
-                    fontWeight: 'bold',
-                    letterSpacing: '1px',
-                  }}
-                >
-                  VIEW ROADMAP ON GITHUB
-                </a>
-              )}
-              <button
-                onClick={() => setAnalysisModal(null)}
-                style={{
-                  flex: 1,
-                  padding: '1rem',
-                  background: '#ffffff',
-                  color: '#000000',
-                  border: '2px solid #000000',
-                  borderLeft: '4px solid #000000',
-                  borderBottom: '4px solid #000000',
-                  fontFamily: "'Courier New', monospace",
-                  fontSize: '0.875rem',
-                  fontWeight: 'bold',
-                  letterSpacing: '1px',
-                  cursor: 'pointer',
-                }}
-              >
-                CLOSE
-              </button>
-            </div>
+            {/* Close Button */}
+            <button
+              onClick={() => setAnalysisModal(null)}
+              style={{
+                width: '100%',
+                padding: '1rem',
+                background: '#ffffff',
+                color: '#000000',
+                border: '2px solid #000000',
+                borderLeft: '4px solid #000000',
+                borderBottom: '4px solid #000000',
+                fontFamily: "'Courier New', monospace",
+                fontSize: '0.875rem',
+                fontWeight: 'bold',
+                letterSpacing: '1px',
+                cursor: 'pointer',
+              }}
+            >
+              CANCEL
+            </button>
           </div>
         </div>
       )}
@@ -1109,7 +1023,7 @@ export default function OrgRepoIssuesPage({ params }) {
                               fontSize: '0.75rem',
                               fontFamily: "'Courier New', monospace",
                             }}>
-                              {skill}
+                              {typeof skill === 'string' ? skill : skill.skill || skill.name} {typeof skill === 'object' && skill.score ? `(${skill.score}%)` : ''}
                             </span>
                           ))}
                         </div>
@@ -1234,7 +1148,7 @@ export default function OrgRepoIssuesPage({ params }) {
                               fontSize: '0.75rem',
                               fontFamily: "'Courier New', monospace",
                             }}>
-                              {skill}
+                              {typeof skill === 'string' ? skill : skill.skill || skill.name} {typeof skill === 'object' && skill.score ? `(${skill.score}%)` : ''}
                             </span>
                           ))}
                         </div>
