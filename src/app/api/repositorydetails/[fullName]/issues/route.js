@@ -3,6 +3,11 @@ import { cookies } from "next/headers";
 import { jwtVerify } from "jose";
 import connectDB from "@/lib/db";
 import User from "@/models/User";
+import { 
+  calculateAdvancedMatchScore, 
+  generatePersonalizedApproach,
+  inferDeveloperRoles 
+} from "@/lib/advancedMatching";
 
 const secret = new TextEncoder().encode(
   process.env.AUTH0_SECRET || "your-secret-key-min-32-chars-long!"
@@ -69,16 +74,25 @@ export async function GET(request, { params }) {
 
     console.log(user.githubUsername, githubIssues[1]);
 
-    // Get user's skills for match score calculation
+    // Get user's skills and complete profile for advanced matching
     const userSkills = user.skills || [];
-    const userTechStack = user.techStack || { languages: [], frameworks: [], tools: [], databases: [] };
+    const userProfile = {
+      skills: userSkills,
+      techStack: user.techStack || { languages: [], frameworks: [], tools: [], databases: [], cloudPlatforms: [], libraries: [] },
+      totalExperience: user.totalExperience || 0,
+      confidenceLevel: user.confidenceLevel || 'medium',
+      summary: user.summary || '',
+      expertise: user.expertise || 'intermediate',
+    };
 
-    // Process issues with match scores
+    // Infer developer roles for logging
+    const developerRoles = inferDeveloperRoles(userProfile);
+    console.log(`Developer roles inferred: ${developerRoles.join(', ') || 'None'}`);
+
+    // Process issues with advanced match scores
     const processedIssues = await Promise.all(githubIssues.map(async (issue) => {
       let matchScore = 0;
-      let requiredSkills = [];
-      let expertise = 'intermediate';
-      let estimatedHours = 8;
+      let matchAnalysis = null;
       let autoCommented = false;
 
       // Only calculate match score if user has skills
@@ -87,65 +101,37 @@ export async function GET(request, { params }) {
       ) || false;
       const hasAssignees = issue.assignees && issue.assignees.length > 0;
 
-      if (userSkills.length > 0) {
+      if (userSkills.length > 0 || Object.keys(userProfile.techStack).length > 0) {
         try {
-          // Use Gemini AI to calculate match score directly
           const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-          const matchingPrompt = `Analyze this GitHub issue and calculate how well it matches a developer's skills.
-
-Issue Details:
-Title: ${issue.title}
-Body: ${issue.body || 'No description'}
-Labels: ${issue.labels.map(l => l.name).join(', ')}
-
-Developer Profile:
-Skills: ${userSkills.map(s => `${s.skill || s.name} (${s.score || s.level || 50}%)`).join(', ')}
-Tech Stack: ${JSON.stringify(userTechStack)}
-Experience Level: ${user.expertise || 'intermediate'}
-
-Calculate a match percentage (0-100) based on:
-- Technical skills alignment
-- Experience level match
-- Tech stack compatibility
-
-Return ONLY a JSON object with this exact format:
-{"matchScore": 85, "reasoning": "Brief explanation of the match"}
-
-Be realistic - most issues should have moderate match scores unless there's a strong alignment.`;
-
-          const matchingResponse = await fetch(
-            `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`,
+          
+          // Use advanced matching system
+          const matchResult = await calculateAdvancedMatchScore(
             {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                contents: [{ parts: [{ text: matchingPrompt }] }],
-              }),
-            }
+              title: issue.title,
+              body: issue.body || '',
+              labels: issue.labels,
+              repository: decodedFullName,
+            },
+            userProfile,
+            GEMINI_API_KEY
           );
-
-          if (matchingResponse.ok) {
-            try {
-              const matchingData = await matchingResponse.json();
-              
-              if (matchingData.candidates && matchingData.candidates.length > 0) {
-                const matchingText = matchingData.candidates[0]?.content?.parts?.[0]?.text || '{}';
-                
-                const jsonMatch = matchingText.match(/\{[\s\S]*\}/);
-                if (jsonMatch) {
-                  const parsed = JSON.parse(jsonMatch[0]);
-                  matchScore = Math.min(100, Math.max(0, parsed.matchScore || 0));
-                  console.log(`Issue #${issue.number} match score: ${matchScore}%`);
-                }
-              }
-            } catch (e) {
-              console.error('Failed to parse AI matching response:', e);
-              matchScore = 0;
-            }
+          
+          matchScore = matchResult.matchScore;
+          matchAnalysis = matchResult.analysis;
+          
+          console.log(`Issue #${issue.number} "${issue.title}" - Match: ${matchScore}% (Recommendation: ${matchAnalysis?.recommendedAction || 'N/A'})`);
+          if (matchAnalysis?.primaryReason) {
+            console.log(`  → Reason: ${matchAnalysis.primaryReason}`);
           }
 
-          // Auto-comment "Please assign to me" if match score > 30% and issue has no assignees
-          if (matchScore > 30 && !hasAssignees && !isAssignedToMe) {
+          // Auto-comment if match score is good and recommended action is positive
+          const shouldComment = matchScore > 40 && 
+                               !hasAssignees && 
+                               !isAssignedToMe &&
+                               matchAnalysis?.recommendedAction !== 'skip';
+
+          if (shouldComment) {
             try {
               // First check if user has already commented on this issue
               const existingCommentsResponse = await fetch(
@@ -159,50 +145,52 @@ Be realistic - most issues should have moderate match scores unless there's a st
               );
 
               let hasAlreadyCommented = false;
+              let hasSystemComment = false;
+              
               if (existingCommentsResponse.ok) {
                 const existingComments = await existingCommentsResponse.json();
+                
+                // Check if user has any comment
                 hasAlreadyCommented = existingComments.some(comment => 
                   comment.user.login === user.githubUsername
                 );
+                
+                // Check if there's already a system-generated comment
+                hasSystemComment = existingComments.some(comment => 
+                  comment.user.login === user.githubUsername && 
+                  comment.body.includes('Please assign this issue to me') &&
+                  comment.body.includes('skill match')
+                );
               }
 
-              // Only comment if user hasn't already commented
-              if (!hasAlreadyCommented) {
-                // Generate a solution/approach for the issue
-                const solutionPrompt = `Based on the developer's skills and the issue details, provide a brief technical approach/solution for how this issue could be tackled.
+              // Only comment if no previous comment exists
+              if (!hasAlreadyCommented || !hasSystemComment) {
+                // Generate personalized approach
+                const approachText = await generatePersonalizedApproach(
+                  {
+                    title: issue.title,
+                    body: issue.body || '',
+                    labels: issue.labels,
+                  },
+                  userProfile,
+                  matchAnalysis,
+                  GEMINI_API_KEY
+                );
 
-Issue: ${issue.title}
-Description: ${issue.body || 'No description'}
-Developer Skills: ${userSkills.map(s => s.skill || s.name).join(', ')}
-Tech Stack: ${JSON.stringify(userTechStack)}
-
-Provide a concise 2-3 sentence approach/solution.`;
-
-                let solutionText = "I will analyze the requirements and implement a solution using my technical expertise.";
+                // Build comment with match details
+                let commentBody = `Please assign this issue to me. I have a **${matchScore}% skill match** for this task.\n\n`;
                 
-                try {
-                  const solutionResponse = await fetch(
-                    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`,
-                    {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({
-                        contents: [{ parts: [{ text: solutionPrompt }] }],
-                      }),
-                    }
-                  );
-
-                  if (solutionResponse.ok) {
-                    const solutionData = await solutionResponse.json();
-                    if (solutionData.candidates && solutionData.candidates.length > 0) {
-                      const solutionRaw = solutionData.candidates[0]?.content?.parts?.[0]?.text || '';
-                      // Clean up the response to get just the solution text
-                      solutionText = solutionRaw.replace(/^["']|["']$/g, '').trim();
-                    }
-                  }
-                } catch (solutionError) {
-                  console.error('Error generating solution:', solutionError);
+                // Add role information if available
+                if (matchAnalysis?.inferredRoles && matchAnalysis.inferredRoles.length > 0) {
+                  commentBody += `**My Role**: ${matchAnalysis.inferredRoles.join(' / ').toUpperCase()} Developer\n\n`;
                 }
+                
+                // Add strengths if available
+                if (matchAnalysis?.strengths && matchAnalysis.strengths.length > 0) {
+                  commentBody += `**Key Strengths**:\n${matchAnalysis.strengths.map(s => `- ${s}`).join('\n')}\n\n`;
+                }
+                
+                commentBody += `**My Approach**:\n${approachText}`;
 
                 const commentResponse = await fetch(
                   `https://api.github.com/repos/${decodedFullName}/issues/${issue.number}/comments`,
@@ -213,23 +201,25 @@ Provide a concise 2-3 sentence approach/solution.`;
                       Accept: 'application/vnd.github.v3+json',
                       'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({
-                      body: `@${user.githubUsername} Please assign this issue to me. I have a ${matchScore}% skill match for this task.\n\n**My Approach:** ${solutionText}`
-                    }),
+                    body: JSON.stringify({ body: commentBody }),
                   }
                 );
 
                 if (commentResponse.ok) {
-                  console.log(`Auto-commented on issue #${issue.number} with ${matchScore}% match`);
+                  console.log(`✅ Auto-commented on issue #${issue.number} with ${matchScore}% match`);
                   autoCommented = true;
                 } else {
                   console.error(`Failed to auto-comment on issue #${issue.number}:`, await commentResponse.text());
                 }
               } else {
-                console.log(`User has already commented on issue #${issue.number}, skipping auto-comment`);
+                console.log(`⏭️ Already commented on issue #${issue.number}, skipping`);
               }
             } catch (commentError) {
               console.error(`Error auto-commenting on issue #${issue.number}:`, commentError);
+            }
+          } else {
+            if (matchScore <= 40) {
+              console.log(`⏭️ Match score too low (${matchScore}%) for issue #${issue.number}`);
             }
           }
         } catch (error) {
@@ -257,18 +247,30 @@ Provide a concise 2-3 sentence approach/solution.`;
             url: assignee.html_url,
           })) || [],
         isAssignedToMe,
-        requiredSkills: [], // Not extracted in this simplified version
-        expertise: 'intermediate', // Default value
-        estimatedHours: 8, // Default value
         matchScore,
+        matchAnalysis: matchAnalysis ? {
+          primaryReason: matchAnalysis.primaryReason,
+          strengths: matchAnalysis.strengths,
+          concerns: matchAnalysis.concerns,
+          recommendedAction: matchAnalysis.recommendedAction,
+          inferredRoles: matchAnalysis.inferredRoles,
+        } : null,
         autoCommented,
-        commentedAt: null, // Will be set when comments are analyzed
         createdAt: issue.created_at,
       };
     }));
 
+    // Sort issues by match score (highest first) for better UX
+    const sortedIssues = processedIssues.sort((a, b) => b.matchScore - a.matchScore);
+
     return NextResponse.json({
-      issues: processedIssues,
+      issues: sortedIssues,
+      developerProfile: {
+        roles: developerRoles,
+        skills: userSkills.length,
+        experience: userProfile.totalExperience,
+        confidence: userProfile.confidenceLevel,
+      }
     });
   } catch (error) {
     console.error("Get issues error:", error);

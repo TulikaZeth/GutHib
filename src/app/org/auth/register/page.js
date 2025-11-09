@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 
 export default function OrgRegisterPage() {
+  const [step, setStep] = useState(1); // 1: form, 2: payment
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -15,30 +16,48 @@ export default function OrgRegisterPage() {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
-  const handleSubmit = async (e) => {
+  const handleFormSubmit = (e) => {
     e.preventDefault();
     setError('');
+    // Move to payment step
+    setStep(2);
+  };
+
+  const handlePayment = async () => {
     setLoading(true);
+    setError('');
 
     try {
-      const response = await fetch('/api/org/auth/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+      // Create checkout session
+      const res = await fetch("/api/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          product_id: "org_subscription",
+          email: formData.email,
+          success_url: `${window.location.origin}/org/auth/register/complete?data=${encodeURIComponent(JSON.stringify(formData))}`,
+          cancel_url: `${window.location.origin}/org/auth/register`,
+        }),
       });
 
-      const data = await response.json();
-
-      if (response.ok) {
-        router.push('/org/dashboard');
+      const data = await res.json();
+      
+      if (data.url) {
+        // Redirect to payment page
+        window.location.href = data.url;
       } else {
-        setError(data.error || 'Registration failed');
+        setError('Failed to create payment session');
+        setLoading(false);
       }
     } catch (err) {
       setError('An error occurred. Please try again.');
-    } finally {
       setLoading(false);
     }
+  };
+
+  const handleBack = () => {
+    setStep(1);
+    setError('');
   };
 
   return (
@@ -79,7 +98,9 @@ export default function OrgRegisterPage() {
           borderLeft: '6px solid #000000',
           borderBottom: '6px solid #000000',
         }}>
-          <form onSubmit={handleSubmit}>
+          {step === 1 ? (
+            // STEP 1: Registration Form
+            <form onSubmit={handleFormSubmit}>
             <div style={{ marginBottom: '1.5rem' }}>
               <label style={{
                 display: 'block',
@@ -284,9 +305,142 @@ export default function OrgRegisterPage() {
                 transition: 'all 0.2s ease',
               }}
             >
-              {loading ? 'REGISTERING...' : 'REGISTER ORGANIZATION'}
+              CONTINUE TO PAYMENT
             </button>
           </form>
+          ) : (
+            // STEP 2: Payment
+            <div>
+              <div style={{
+                padding: '1.5rem',
+                background: '#f5f5f5',
+                border: '2px solid #000000',
+                marginBottom: '2rem',
+              }}>
+                <h3 style={{
+                  color: '#000000',
+                  fontSize: '1rem',
+                  fontWeight: 'bold',
+                  letterSpacing: '1.5px',
+                  marginBottom: '1rem',
+                  fontFamily: "'Courier New', monospace",
+                }}>
+                  📋 REGISTRATION DETAILS
+                </h3>
+                <div style={{
+                  fontSize: '0.875rem',
+                  fontFamily: "'Courier New', monospace",
+                  color: '#666666',
+                }}>
+                  <p style={{ marginBottom: '0.5rem' }}>
+                    <strong>Organization:</strong> {formData.orgName}
+                  </p>
+                  <p style={{ marginBottom: '0.5rem' }}>
+                    <strong>Email:</strong> {formData.email}
+                  </p>
+                  {formData.githubOrgName && (
+                    <p style={{ marginBottom: '0.5rem' }}>
+                      <strong>GitHub Org:</strong> {formData.githubOrgName}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              <div style={{
+                padding: '2rem',
+                background: '#000000',
+                color: '#ffffff',
+                border: '2px solid #ffffff',
+                marginBottom: '2rem',
+                textAlign: 'center',
+              }}>
+                <p style={{
+                  fontSize: '0.875rem',
+                  letterSpacing: '1px',
+                  marginBottom: '0.5rem',
+                  fontFamily: "'Courier New', monospace",
+                }}>
+                  SUBSCRIPTION PLAN
+                </p>
+                <p style={{
+                  fontSize: '2rem',
+                  fontWeight: 'bold',
+                  marginBottom: '0.5rem',
+                  fontFamily: "'Courier New', monospace",
+                }}>
+                  $49/month
+                </p>
+                <p style={{
+                  fontSize: '0.75rem',
+                  opacity: 0.8,
+                  fontFamily: "'Courier New', monospace",
+                }}>
+                  AI-Powered Issue Assignment • Unlimited Repos • Advanced Analytics
+                </p>
+              </div>
+
+              {error && (
+                <div style={{
+                  padding: '1rem',
+                  marginBottom: '1.5rem',
+                  background: '#ff4444',
+                  color: '#ffffff',
+                  border: '2px solid #ffffff',
+                  fontFamily: "'Courier New', monospace",
+                  fontSize: '0.875rem',
+                  fontWeight: 'bold',
+                  letterSpacing: '0.5px',
+                }}>
+                  {error}
+                </div>
+              )}
+
+              <button
+                onClick={handlePayment}
+                disabled={loading}
+                style={{
+                  width: '100%',
+                  padding: '1rem',
+                  background: loading ? '#999999' : '#000000',
+                  color: '#ffffff',
+                  border: '2px solid #ffffff',
+                  borderLeft: '4px solid #ffffff',
+                  borderBottom: '4px solid #ffffff',
+                  fontFamily: "'Courier New', monospace",
+                  fontSize: '0.875rem',
+                  fontWeight: 'bold',
+                  letterSpacing: '2px',
+                  cursor: loading ? 'not-allowed' : 'pointer',
+                  transition: 'all 0.2s ease',
+                  marginBottom: '1rem',
+                }}
+              >
+                {loading ? 'REDIRECTING TO PAYMENT...' : 'PROCEED TO PAYMENT'}
+              </button>
+
+              <button
+                onClick={handleBack}
+                disabled={loading}
+                style={{
+                  width: '100%',
+                  padding: '1rem',
+                  background: '#ffffff',
+                  color: '#000000',
+                  border: '2px solid #000000',
+                  borderLeft: '4px solid #000000',
+                  borderBottom: '4px solid #000000',
+                  fontFamily: "'Courier New', monospace",
+                  fontSize: '0.875rem',
+                  fontWeight: 'bold',
+                  letterSpacing: '2px',
+                  cursor: loading ? 'not-allowed' : 'pointer',
+                  transition: 'all 0.2s ease',
+                }}
+              >
+                BACK TO FORM
+              </button>
+            </div>
+          )}
 
           <div style={{
             marginTop: '1.5rem',

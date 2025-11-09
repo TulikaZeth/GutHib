@@ -1000,35 +1000,48 @@ export default function OrgRepoIssuesPage({ params }) {
                       </div>
                     )}
                     
-                    {dev.skills && dev.skills.length > 0 && (
-                      <div style={{ marginBottom: '0.5rem' }}>
-                        <p style={{
-                          fontSize: '0.75rem',
-                          color: '#666666',
-                          letterSpacing: '1px',
-                          marginBottom: '0.5rem',
-                          fontFamily: "'Courier New', monospace",
-                        }}>
-                          SKILLS {dev.expertise && `(${dev.expertise.toUpperCase()})`}
-                        </p>
-                        <div style={{
-                          display: 'flex',
-                          flexWrap: 'wrap',
-                          gap: '0.5rem',
-                        }}>
-                          {dev.skills.slice(0, 10).map((skill, i) => (
-                            <span key={i} style={{
-                              padding: '0.25rem 0.5rem',
-                              border: '1px solid #000000',
-                              fontSize: '0.75rem',
-                              fontFamily: "'Courier New', monospace",
-                            }}>
-                              {typeof skill === 'string' ? skill : skill.skill || skill.name} {typeof skill === 'object' && skill.score ? `(${skill.score}%)` : ''}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    )}
+               {dev.skills && dev.skills.length > 0 && (
+  <div style={{ marginBottom: '0.5rem' }}>
+    <p
+      style={{
+        fontSize: '0.75rem',
+        color: '#000000',
+        letterSpacing: '1px',
+        marginBottom: '0.5rem',
+        fontFamily: "'Courier New', monospace",
+      }}
+    >
+      SKILLS {dev.expertise && `(${dev.expertise.toUpperCase()})`}
+    </p>
+    <div
+      style={{
+        display: 'flex',
+        flexWrap: 'wrap',
+        gap: '0.5rem',
+      }}
+    >
+      {dev.skills.slice(0, 10).map((skill, i) => (
+        <span
+          key={i}
+          style={{
+            padding: '0.25rem 0.5rem',
+            border: '1px solid #000000',
+            fontSize: '0.75rem',
+            fontFamily: "'Courier New', monospace",
+            color: '#000000', // 👈 added here
+          }}
+        >
+          {typeof skill === 'string'
+            ? skill
+            : skill.skill || skill.name}{' '}
+          {typeof skill === 'object' && skill.score
+            ? `(${skill.score}%)`
+            : ''}
+        </span>
+      ))}
+    </div>
+  </div>
+)}
 
                     {dev.gitAnalysis && (
                       <div style={{
@@ -1129,10 +1142,10 @@ export default function OrgRepoIssuesPage({ params }) {
                       <div style={{ marginBottom: '0.5rem' }}>
                         <p style={{
                           fontSize: '0.75rem',
-                          color: '#666666',
                           letterSpacing: '1px',
                           marginBottom: '0.5rem',
                           fontFamily: "'Courier New', monospace",
+                          color: '#000000', 
                         }}>
                           SKILLS
                         </p>
@@ -1147,6 +1160,7 @@ export default function OrgRepoIssuesPage({ params }) {
                               border: '1px solid #000000',
                               fontSize: '0.75rem',
                               fontFamily: "'Courier New', monospace",
+                              color: '#000000', 
                             }}>
                               {typeof skill === 'string' ? skill : skill.skill || skill.name} {typeof skill === 'object' && skill.score ? `(${skill.score}%)` : ''}
                             </span>

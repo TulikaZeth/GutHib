@@ -1,15 +1,16 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { useParams } from 'next/navigation';
+import { useEffect, useState } from "react";
+import { useParams } from "next/navigation";
 
 export default function RepoDetailPage() {
   const params = useParams();
   const fullName = decodeURIComponent(params.fullName);
-  
+
   const [issues, setIssues] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState('all'); // 'all', 'unassigned', 'commented'
+  const [filter, setFilter] = useState("all"); // 'all', 'unassigned', 'commented'
+  const [developerProfile, setDeveloperProfile] = useState(null);
 
   useEffect(() => {
     if (fullName) {
@@ -19,41 +20,49 @@ export default function RepoDetailPage() {
 
   const fetchIssues = async () => {
     try {
-      const response = await fetch(`/api/repositorydetails/${encodeURIComponent(fullName)}/issues`);
+      const response = await fetch(
+        `/api/repositorydetails/${encodeURIComponent(fullName)}/issues`
+      );
       if (response.ok) {
         const data = await response.json();
-        console.log(data)
+        console.log(data);
         setIssues(data.issues || []);
+        setDeveloperProfile(data.developerProfile || null);
       }
     } catch (error) {
-      console.error('Error fetching issues:', error);
+      console.error("Error fetching issues:", error);
     } finally {
       setLoading(false);
     }
   };
 
-  const filteredIssues = issues.filter(issue => {
-    if (filter === 'unassigned') return issue.state === 'open' && !issue.isAssignedToMe;
-    if (filter === 'assigned') return issue.isAssignedToMe;
-    if (filter === 'interested') return issue.autoCommented;
-    if (filter === 'commented') return issue.commentedAt;
+  const filteredIssues = issues.filter((issue) => {
+    if (filter === "unassigned")
+      return issue.state === "open" && !issue.isAssignedToMe;
+    if (filter === "assigned") return issue.isAssignedToMe;
+    if (filter === "interested") return issue.autoCommented;
+    if (filter === "commented") return issue.commentedAt;
     return true;
   });
 
   if (loading) {
     return (
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        minHeight: '400px',
-      }}>
-        <p style={{
-          color: '#ffffff',
-          fontSize: '1rem',
-          letterSpacing: '2px',
-          fontFamily: "'Courier New', monospace",
-        }}>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          minHeight: "400px",
+        }}
+      >
+        <p
+          style={{
+            color: "#ffffff",
+            fontSize: "1rem",
+            letterSpacing: "2px",
+            fontFamily: "'Courier New', monospace",
+          }}
+        >
           LOADING ISSUES...
         </p>
       </div>
@@ -63,236 +72,568 @@ export default function RepoDetailPage() {
   return (
     <div>
       {/* Page Header */}
-      <div style={{
-        marginBottom: '2rem',
-        padding: '2rem',
-        background: '#000000',
-        border: '2px solid #ffffff',
-        borderLeft: '6px solid #ffffff',
-        borderBottom: '6px solid #ffffff',
-      }}>
-        <h1 style={{
-          color: '#ffffff',
-          fontSize: '2rem',
-          fontWeight: 900,
-          letterSpacing: '3px',
-          marginBottom: '0.5rem',
-          fontFamily: "'Courier New', monospace",
-        }}>
+      <div
+        style={{
+          marginBottom: "2rem",
+          padding: "2rem",
+          background: "#000000",
+          border: "2px solid #ffffff",
+          borderLeft: "6px solid #ffffff",
+          borderBottom: "6px solid #ffffff",
+        }}
+      >
+        <h1
+          style={{
+            color: "#ffffff",
+            fontSize: "2rem",
+            fontWeight: 900,
+            letterSpacing: "3px",
+            marginBottom: "0.5rem",
+            fontFamily: "'Courier New', monospace",
+          }}
+        >
           {fullName}
         </h1>
-        <p style={{
-          color: '#999999',
-          fontSize: '1rem',
-          letterSpacing: '1px',
-          margin: 0,
-          fontFamily: "'Courier New', monospace",
-        }}>
+        <p
+          style={{
+            color: "#999999",
+            fontSize: "1rem",
+            letterSpacing: "1px",
+            margin: 0,
+            fontFamily: "'Courier New', monospace",
+          }}
+        >
           {filteredIssues.length} issue(s) found
         </p>
+        
+        {/* Developer Profile Info */}
+        {developerProfile && (
+          <div
+            style={{
+              marginTop: "1rem",
+              padding: "1rem",
+              background: "#1a1a1a",
+              border: "2px solid #333333",
+              display: "flex",
+              gap: "2rem",
+              flexWrap: "wrap",
+              alignItems: "center",
+            }}
+          >
+            {/* Developer Roles */}
+            {developerProfile.roles && developerProfile.roles.length > 0 && (
+              <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+                <span
+                  style={{
+                    color: "#00ff00",
+                    fontSize: "0.75rem",
+                    fontWeight: "bold",
+                    letterSpacing: "1px",
+                    fontFamily: "'Courier New', monospace",
+                  }}
+                >
+                  YOUR ROLES:
+                </span>
+                <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+                  {developerProfile.roles.map((role, idx) => (
+                    <span
+                      key={idx}
+                      style={{
+                        padding: "0.25rem 0.75rem",
+                        background: "#00ff00",
+                        color: "#000000",
+                        fontFamily: "'Courier New', monospace",
+                        fontSize: "0.7rem",
+                        fontWeight: "bold",
+                        letterSpacing: "0.5px",
+                        border: "2px solid #00ff00",
+                      }}
+                    >
+                      {role.toUpperCase()}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Stats */}
+            <div style={{ display: "flex", gap: "1.5rem", flexWrap: "wrap" }}>
+              <span
+                style={{
+                  color: "#999999",
+                  fontSize: "0.75rem",
+                  letterSpacing: "0.5px",
+                  fontFamily: "'Courier New', monospace",
+                }}
+              >
+                Skills: <strong style={{ color: "#ffffff" }}>{developerProfile.skills}</strong>
+              </span>
+              <span
+                style={{
+                  color: "#999999",
+                  fontSize: "0.75rem",
+                  letterSpacing: "0.5px",
+                  fontFamily: "'Courier New', monospace",
+                }}
+              >
+                Experience: <strong style={{ color: "#ffffff" }}>{developerProfile.experience} yrs</strong>
+              </span>
+              <span
+                style={{
+                  color: "#999999",
+                  fontSize: "0.75rem",
+                  letterSpacing: "0.5px",
+                  fontFamily: "'Courier New', monospace",
+                }}
+              >
+                Confidence: <strong style={{ color: "#ffffff" }}>{developerProfile.confidence?.toUpperCase()}</strong>
+              </span>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Filters */}
-      <div style={{
-        display: 'flex',
-        gap: '1rem',
-        marginBottom: '2rem',
-        flexWrap: 'wrap',
-      }}>
-        {['all', 'unassigned', 'assigned', 'interested', 'commented'].map((f) => (
-          <button
-            key={f}
-            onClick={() => setFilter(f)}
-            style={{
-              padding: '0.75rem 1.5rem',
-              background: filter === f ? '#ffffff' : '#000000',
-              color: filter === f ? '#000000' : '#ffffff',
-              border: '2px solid #ffffff',
-              borderLeft: '4px solid #ffffff',
-              borderBottom: '4px solid #ffffff',
-              fontFamily: "'Courier New', monospace",
-              fontSize: '0.875rem',
-              fontWeight: 'bold',
-              letterSpacing: '1px',
-              cursor: 'pointer',
-              transition: 'all 0.2s ease',
-            }}
-          >
-            {f.toUpperCase()}
-          </button>
-        ))}
+      <div
+        style={{
+          display: "flex",
+          gap: "1rem",
+          marginBottom: "2rem",
+          flexWrap: "wrap",
+        }}
+      >
+        {["all", "unassigned", "assigned", "interested", "commented"].map(
+          (f) => (
+            <button
+              key={f}
+              onClick={() => setFilter(f)}
+              style={{
+                padding: "0.75rem 1.5rem",
+                background: filter === f ? "#ffffff" : "#000000",
+                color: filter === f ? "#000000" : "#ffffff",
+                border: "2px solid #ffffff",
+                borderLeft: "4px solid #ffffff",
+                borderBottom: "4px solid #ffffff",
+                fontFamily: "'Courier New', monospace",
+                fontSize: "0.875rem",
+                fontWeight: "bold",
+                letterSpacing: "1px",
+                cursor: "pointer",
+                transition: "all 0.2s ease",
+              }}
+            >
+              {f.toUpperCase()}
+            </button>
+          )
+        )}
       </div>
 
       {/* Issues List */}
       {filteredIssues.length === 0 ? (
-        <div style={{
-          padding: '3rem',
-          textAlign: 'center',
-          background: '#000000',
-          border: '2px solid #ffffff',
-          borderLeft: '4px solid #ffffff',
-          borderBottom: '4px solid #ffffff',
-        }}>
-          <p style={{
-            color: '#999999',
-            fontSize: '1rem',
-            letterSpacing: '1px',
-            fontFamily: "'Courier New', monospace",
-          }}>
+        <div
+          style={{
+            padding: "3rem",
+            textAlign: "center",
+            background: "#000000",
+            border: "2px solid #ffffff",
+            borderLeft: "4px solid #ffffff",
+            borderBottom: "4px solid #ffffff",
+          }}
+        >
+          <p
+            style={{
+              color: "#999999",
+              fontSize: "1rem",
+              letterSpacing: "1px",
+              fontFamily: "'Courier New', monospace",
+            }}
+          >
             NO ISSUES FOUND
           </p>
         </div>
       ) : (
-        <div style={{
-          display: 'grid',
-          gap: '1.5rem',
-        }}>
+        <div
+          style={{
+            display: "grid",
+            gap: "1.5rem",
+          }}
+        >
           {filteredIssues.map((issue) => (
             <div
               key={issue.id}
               style={{
-                padding: '2rem',
-                background: '#000000',
-                border: issue.isAssignedToMe ? '3px solid #00ff00' : '2px solid #ffffff',
-                borderLeft: issue.matchScore >= 75 ? '6px solid #00ff00' : issue.matchScore >= 50 ? '6px solid #ffff00' : '4px solid #ffffff',
-                borderBottom: '4px solid #ffffff',
-                transition: 'all 0.3s ease',
-                position: 'relative',
+                padding: "2rem",
+                background: "#000000",
+                border: issue.isAssignedToMe
+                  ? "3px solid #00ff00"
+                  : "2px solid #ffffff",
+                borderLeft:
+                  issue.matchScore >= 75
+                    ? "6px solid #00ff00"
+                    : issue.matchScore >= 50
+                    ? "6px solid #ffff00"
+                    : "4px solid #ffffff",
+                borderBottom: "4px solid #ffffff",
+                transition: "all 0.3s ease",
+                position: "relative",
               }}
             >
               {/* Issue Header */}
-              <div style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'flex-start',
-                marginBottom: '1rem',
-              }}>
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "flex-start",
+                  marginBottom: "1rem",
+                }}
+              >
                 <div style={{ flex: 1 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '0.5rem' }}>
-                    <h3 style={{
-                      color: '#ffffff',
-                      fontSize: '1.25rem',
-                      fontWeight: 'bold',
-                      letterSpacing: '1px',
-                      margin: 0,
-                      fontFamily: "'Courier New', monospace",
-                    }}>
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "1rem",
+                      marginBottom: "0.5rem",
+                    }}
+                  >
+                    <h3
+                      style={{
+                        color: "#ffffff",
+                        fontSize: "1.25rem",
+                        fontWeight: "bold",
+                        letterSpacing: "1px",
+                        margin: 0,
+                        fontFamily: "'Courier New', monospace",
+                      }}
+                    >
                       #{issue.issueNumber} - {issue.title}
                     </h3>
                     {issue.isAssignedToMe && (
-                      <span style={{
-                        padding: '0.25rem 0.75rem',
-                        background: '#00ff00',
-                        color: '#000000',
-                        fontFamily: "'Courier New', monospace",
-                        fontSize: '0.7rem',
-                        fontWeight: 'bold',
-                        letterSpacing: '0.5px',
-                        border: '2px solid #000000',
-                      }}>
+                      <span
+                        style={{
+                          padding: "0.25rem 0.75rem",
+                          background: "#00ff00",
+                          color: "#000000",
+                          fontFamily: "'Courier New', monospace",
+                          fontSize: "0.7rem",
+                          fontWeight: "bold",
+                          letterSpacing: "0.5px",
+                          border: "2px solid #000000",
+                        }}
+                      >
                         ASSIGNED TO YOU
                       </span>
                     )}
                     {issue.autoCommented && (
-                      <span style={{
-                        padding: '0.25rem 0.75rem',
-                        background: '#ffff00',
-                        color: '#000000',
-                        fontFamily: "'Courier New', monospace",
-                        fontSize: '0.7rem',
-                        fontWeight: 'bold',
-                        letterSpacing: '0.5px',
-                        border: '2px solid #000000',
-                      }}>
+                      <span
+                        style={{
+                          padding: "0.25rem 0.75rem",
+                          background: "#ffff00",
+                          color: "#000000",
+                          fontFamily: "'Courier New', monospace",
+                          fontSize: "0.7rem",
+                          fontWeight: "bold",
+                          letterSpacing: "0.5px",
+                          border: "2px solid #000000",
+                        }}
+                      >
                         COMMENTED
                       </span>
                     )}
                   </div>
                 </div>
-                <div style={{
-                  padding: '0.5rem 1rem',
-                  background: issue.matchScore >= 75 ? '#00ff00' : issue.matchScore >= 50 ? '#ffff00' : '#ff0000',
-                  color: '#000000',
-                  fontFamily: "'Courier New', monospace",
-                  fontSize: '0.875rem',
-                  fontWeight: 'bold',
-                  letterSpacing: '1px',
-                  border: '2px solid #000000',
-                }}>
+                <div
+                  style={{
+                    padding: "0.5rem 1rem",
+                    background:
+                      issue.matchScore >= 75
+                        ? "#00ff00"
+                        : issue.matchScore >= 50
+                        ? "#ffff00"
+                        : "#ff0000",
+                    color: "#000000",
+                    fontFamily: "'Courier New', monospace",
+                    fontSize: "0.875rem",
+                    fontWeight: "bold",
+                    letterSpacing: "1px",
+                    border: "2px solid #000000",
+                  }}
+                >
                   {issue.matchScore}% MATCH
                 </div>
               </div>
 
               {/* Issue Details */}
-              <div style={{
-                display: 'flex',
-                gap: '2rem',
-                marginBottom: '1rem',
-                flexWrap: 'wrap',
-              }}>
-                <p style={{
-                  color: '#999999',
-                  fontSize: '0.75rem',
-                  letterSpacing: '0.5px',
-                  fontFamily: "'Courier New', monospace",
-                  margin: 0,
-                }}>
-                  Expertise: {issue.expertise?.toUpperCase() || 'N/A'}
-                </p>
-                <p style={{
-                  color: '#999999',
-                  fontSize: '0.75rem',
-                  letterSpacing: '0.5px',
-                  fontFamily: "'Courier New', monospace",
-                  margin: 0,
-                }}>
-                  Est. Hours: {issue.estimatedHours || 'N/A'}
-                </p>
-                {issue.commentedAt && (
-                  <p style={{
-                    color: '#00ff00',
-                    fontSize: '0.75rem',
-                    letterSpacing: '0.5px',
+              <div
+                style={{
+                  display: "flex",
+                  gap: "2rem",
+                  marginBottom: "1rem",
+                  flexWrap: "wrap",
+                }}
+              >
+                <p
+                  style={{
+                    color: "#999999",
+                    fontSize: "0.75rem",
+                    letterSpacing: "0.5px",
                     fontFamily: "'Courier New', monospace",
                     margin: 0,
-                    fontWeight: 'bold',
-                  }}>
+                  }}
+                >
+                  Expertise: {issue.expertise?.toUpperCase() || "N/A"}
+                </p>
+                <p
+                  style={{
+                    color: "#999999",
+                    fontSize: "0.75rem",
+                    letterSpacing: "0.5px",
+                    fontFamily: "'Courier New', monospace",
+                    margin: 0,
+                  }}
+                >
+                  Est. Hours: {issue.estimatedHours || "N/A"}
+                </p>
+                {issue.commentedAt && (
+                  <p
+                    style={{
+                      color: "#00ff00",
+                      fontSize: "0.75rem",
+                      letterSpacing: "0.5px",
+                      fontFamily: "'Courier New', monospace",
+                      margin: 0,
+                      fontWeight: "bold",
+                    }}
+                  >
                     ✓ COMMENTED
                   </p>
                 )}
               </div>
 
+              {/* Match Analysis - Show reasoning and details */}
+              {issue.matchAnalysis && (
+                <div
+                  style={{
+                    marginBottom: "1rem",
+                    padding: "1rem",
+                    background: "#1a1a1a",
+                    border: "2px solid #333333",
+                  }}
+                >
+                  {/* Inferred Roles */}
+                  {issue.matchAnalysis.inferredRoles && issue.matchAnalysis.inferredRoles.length > 0 && (
+                    <div style={{ marginBottom: "0.75rem" }}>
+                      <p
+                        style={{
+                          fontSize: "0.7rem",
+                          letterSpacing: "1px",
+                          fontFamily: "'Courier New', monospace",
+                          marginBottom: "0.5rem",
+                          fontWeight: "bold",
+                          color: "#00ff00",
+                        }}
+                      >
+                        YOUR ROLE:
+                      </p>
+                      <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+                        {issue.matchAnalysis.inferredRoles.map((role, idx) => (
+                          <span
+                            key={idx}
+                            style={{
+                              padding: "0.25rem 0.75rem",
+                              background: "#00ff00",
+                              color: "#000000",
+                              fontFamily: "'Courier New', monospace",
+                              fontSize: "0.7rem",
+                              fontWeight: "bold",
+                              letterSpacing: "0.5px",
+                              border: "2px solid #00ff00",
+                            }}
+                          >
+                            {role.toUpperCase()}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Primary Reason */}
+                  {issue.matchAnalysis.primaryReason && (
+                    <div style={{ marginBottom: "0.75rem" }}>
+                      <p
+                        style={{
+                          fontSize: "0.7rem",
+                          letterSpacing: "1px",
+                          fontFamily: "'Courier New', monospace",
+                          marginBottom: "0.5rem",
+                          fontWeight: "bold",
+                          color: "#ffffff",
+                        }}
+                      >
+                        MATCH REASON:
+                      </p>
+                      <p
+                        style={{
+                          fontSize: "0.75rem",
+                          color: "#cccccc",
+                          fontFamily: "'Courier New', monospace",
+                          lineHeight: "1.5",
+                          margin: 0,
+                        }}
+                      >
+                        {issue.matchAnalysis.primaryReason}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Strengths */}
+                  {issue.matchAnalysis.strengths && issue.matchAnalysis.strengths.length > 0 && (
+                    <div style={{ marginBottom: "0.75rem" }}>
+                      <p
+                        style={{
+                          fontSize: "0.7rem",
+                          letterSpacing: "1px",
+                          fontFamily: "'Courier New', monospace",
+                          marginBottom: "0.5rem",
+                          fontWeight: "bold",
+                          color: "#00ff00",
+                        }}
+                      >
+                        ✓ STRENGTHS:
+                      </p>
+                      <ul
+                        style={{
+                          margin: 0,
+                          paddingLeft: "1.5rem",
+                          listStyle: "none",
+                        }}
+                      >
+                        {issue.matchAnalysis.strengths.map((strength, idx) => (
+                          <li
+                            key={idx}
+                            style={{
+                              fontSize: "0.7rem",
+                              color: "#cccccc",
+                              fontFamily: "'Courier New', monospace",
+                              marginBottom: "0.25rem",
+                              lineHeight: "1.4",
+                            }}
+                          >
+                            • {strength}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {/* Concerns */}
+                  {issue.matchAnalysis.concerns && issue.matchAnalysis.concerns.length > 0 && 
+                   issue.matchAnalysis.concerns[0] !== "None" && (
+                    <div style={{ marginBottom: "0.5rem" }}>
+                      <p
+                        style={{
+                          fontSize: "0.7rem",
+                          letterSpacing: "1px",
+                          fontFamily: "'Courier New', monospace",
+                          marginBottom: "0.5rem",
+                          fontWeight: "bold",
+                          color: "#ffff00",
+                        }}
+                      >
+                        ⚠ CONCERNS:
+                      </p>
+                      <ul
+                        style={{
+                          margin: 0,
+                          paddingLeft: "1.5rem",
+                          listStyle: "none",
+                        }}
+                      >
+                        {issue.matchAnalysis.concerns.map((concern, idx) => (
+                          <li
+                            key={idx}
+                            style={{
+                              fontSize: "0.7rem",
+                              color: "#cccccc",
+                              fontFamily: "'Courier New', monospace",
+                              marginBottom: "0.25rem",
+                              lineHeight: "1.4",
+                            }}
+                          >
+                            • {concern}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {/* Recommended Action */}
+                  {issue.matchAnalysis.recommendedAction && (
+                    <div
+                      style={{
+                        display: "inline-block",
+                        padding: "0.25rem 0.75rem",
+                        background:
+                          issue.matchAnalysis.recommendedAction === "assign"
+                            ? "#00ff00"
+                            : issue.matchAnalysis.recommendedAction === "consider"
+                            ? "#ffff00"
+                            : "#ff0000",
+                        color: "#000000",
+                        fontFamily: "'Courier New', monospace",
+                        fontSize: "0.65rem",
+                        fontWeight: "bold",
+                        letterSpacing: "0.5px",
+                        border: "2px solid #000000",
+                      }}
+                    >
+                      {issue.matchAnalysis.recommendedAction === "assign"
+                        ? "✓ RECOMMENDED TO ASSIGN"
+                        : issue.matchAnalysis.recommendedAction === "consider"
+                        ? "→ CONSIDER FOR ASSIGNMENT"
+                        : "✗ NOT RECOMMENDED"}
+                    </div>
+                  )}
+                </div>
+              )}
+
               {/* Required Skills */}
               {issue.requiredSkills && issue.requiredSkills.length > 0 && (
-                <div style={{
-                  marginBottom: '1rem',
-                }}>
-                  <p style={{
-                    color: '#ffffff',
-                    fontSize: '0.75rem',
-                    letterSpacing: '1px',
-                    fontFamily: "'Courier New', monospace",
-                    marginBottom: '0.5rem',
-                    fontWeight: 'bold',
-                  }}>
+                <div
+                  style={{
+                    marginBottom: "1rem",
+                  }}
+                >
+                  <p
+                    style={{
+                      fontSize: "0.75rem",
+                      letterSpacing: "1px",
+                      fontFamily: "'Courier New', monospace",
+                      marginBottom: "0.5rem",
+                      fontWeight: "bold",
+                      color: '#000000', 
+                    }}
+                  >
                     REQUIRED SKILLS:
                   </p>
-                  <div style={{
-                    display: 'flex',
-                    gap: '0.5rem',
-                    flexWrap: 'wrap',
-                  }}>
+                  <div
+                    style={{
+                      display: "flex",
+                      gap: "0.5rem",
+                      flexWrap: "wrap",
+                    }}
+                  >
                     {issue.requiredSkills.map((skill, idx) => (
                       <span
                         key={idx}
                         style={{
-                          padding: '0.25rem 0.75rem',
-                          background: '#ffffff',
-                          color: '#000000',
+                          padding: "0.25rem 0.75rem",
+                          background: "#ffffff",
                           fontFamily: "'Courier New', monospace",
-                          fontSize: '0.7rem',
-                          letterSpacing: '0.5px',
-                          border: '1px solid #000000',
+                          fontSize: "0.7rem",
+                          letterSpacing: "0.5px",
+                          border: "1px solid #000000",
+                          color: '#000000', 
                         }}
                       >
                         {skill.skill} ({skill.importance}/10)
@@ -304,26 +645,32 @@ export default function RepoDetailPage() {
 
               {/* Labels */}
               {issue.labels && issue.labels.length > 0 && (
-                <div style={{
-                  marginBottom: '1rem',
-                }}>
-                  <div style={{
-                    display: 'flex',
-                    gap: '0.5rem',
-                    flexWrap: 'wrap',
-                  }}>
+                <div
+                  style={{
+                    marginBottom: "1rem",
+                  }}
+                >
+                  <div
+                    style={{
+                      display: "flex",
+                      gap: "0.5rem",
+                      flexWrap: "wrap",
+                    }}
+                  >
                     {issue.labels.map((label, idx) => (
                       <span
                         key={idx}
                         style={{
-                          padding: '0.25rem 0.75rem',
-                          background: label.color ? `#${label.color}` : '#999999',
-                          color: '#ffffff',
+                          padding: "0.25rem 0.75rem",
+                          background: label.color
+                            ? `#${label.color}`
+                            : "#999999",
+                          color: "#000000",
                           fontFamily: "'Courier New', monospace",
-                          fontSize: '0.7rem',
-                          letterSpacing: '0.5px',
-                          border: '1px solid #999999',
-                          borderRadius: '4px',
+                          fontSize: "0.7rem",
+                          letterSpacing: "0.5px",
+                          border: "1px solid #999999",
+                          borderRadius: "4px",
                         }}
                       >
                         {label.name}
@@ -334,27 +681,29 @@ export default function RepoDetailPage() {
               )}
 
               {/* Actions */}
-              <div style={{
-                display: 'flex',
-                gap: '1rem',
-              }}>
+              <div
+                style={{
+                  display: "flex",
+                  gap: "1rem",
+                }}
+              >
                 <a
                   href={issue.url}
                   target="_blank"
                   rel="noopener noreferrer"
                   style={{
-                    padding: '0.75rem 1.5rem',
-                    background: '#ffffff',
-                    color: '#000000',
-                    textDecoration: 'none',
+                    padding: "0.75rem 1.5rem",
+                    background: "#ffffff",
+                    color: "#000000",
+                    textDecoration: "none",
                     fontFamily: "'Courier New', monospace",
-                    fontSize: '0.75rem',
-                    fontWeight: 'bold',
-                    letterSpacing: '1px',
-                    border: '2px solid #000000',
-                    borderLeft: '4px solid #000000',
-                    borderBottom: '4px solid #000000',
-                    transition: 'all 0.2s ease',
+                    fontSize: "0.75rem",
+                    fontWeight: "bold",
+                    letterSpacing: "1px",
+                    border: "2px solid #000000",
+                    borderLeft: "4px solid #000000",
+                    borderBottom: "4px solid #000000",
+                    transition: "all 0.2s ease",
                   }}
                 >
                   VIEW ON GITHUB →
